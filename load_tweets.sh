@@ -16,13 +16,5 @@ done
 
 echo 'load denormalized'
 for file in $files; do
-    python3 -c "
-import zipfile, sys
-with zipfile.ZipFile('$file') as z:
-    for name in z.namelist():
-        with z.open(name) as f:
-            for line in f:
-                sys.stdout.buffer.write(line.replace(b'\x00', b''))
-" | psql postgresql://postgres:pass@localhost:9876/postgres -c \
-    "\COPY tweets_jsonb (data) FROM STDIN CSV QUOTE E'\x01' DELIMITER E'\x02';"
+    unzip -p $file | tr -d '\000' | psql postgresql://postgres:pass@localhost:9876/postgres -c "\COPY tweets_jsonb (data) FROM STDIN CSV QUOTE E'\x01' DELIMITER E'\x02';"
 done

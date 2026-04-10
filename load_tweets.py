@@ -115,7 +115,43 @@ def insert_tweet(connection,tweet):
 
         # create/update the user
         sql = sqlalchemy.sql.text('''
+            INSERT INTO users
+                (id_users, created_at, updated_at, id_urls, friends_count, listed_count,
+                 favourites_count, statuses_count, protected, verified, screen_name,
+                 name, location, description, withheld_in_countries)
+                VALUES
+                (:id_users, :created_at, :updated_at, :id_urls, :friends_count, :listed_count,
+                 :favourites_count, :statuses_count, :protected, :verified, :screen_name,
+                 :name, :location, :description, :withheld_in_countries)
+            ON CONFLICT (id_users) DO UPDATE SET
+                updated_at = EXCLUDED.updated_at,
+                friends_count = EXCLUDED.friends_count,
+                listed_count = EXCLUDED.listed_count,
+                favourites_count = EXCLUDED.favourites_count,
+                statuses_count = EXCLUDED.statuses_count,
+                screen_name = EXCLUDED.screen_name,
+                name = EXCLUDED.name,
+                location = EXCLUDED.location,
+                description = EXCLUDED.description
             ''')
+        res = connection.execute(sql, {
+            'id_users': tweet['user']['id'],
+            'created_at': tweet['user']['created_at'],
+            'updated_at': tweet['created_at'],
+            'id_urls': user_id_urls,
+            'friends_count': tweet['user']['friends_count'],
+            'listed_count': tweet['user']['listed_count'],
+            'favourites_count': tweet['user']['favourites_count'],
+            'statuses_count': tweet['user']['statuses_count'],
+            'protected': tweet['user']['protected'],
+            'verified': tweet['user']['verified'],
+            'screen_name': remove_nulls(tweet['user']['screen_name']),
+            'name': remove_nulls(tweet['user']['name']),
+            'location': remove_nulls(tweet['user']['location']),
+            'description': remove_nulls(tweet['user']['description']),
+            'withheld_in_countries': tweet['user'].get('withheld_in_countries'),
+            }) 
+
 
         ########################################
         # insert into the tweets table
